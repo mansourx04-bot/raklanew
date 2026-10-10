@@ -45,7 +45,7 @@ export function Hero() {
             <span className="h-2 w-2 animate-pulse rounded-full bg-volt" />{t('hero_kicker')}
           </motion.p>
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }} className="font-display text-lg font-bold text-chalk/70 md:text-xl" data-testid="text-slogan">{t('slogan')}</motion.p>
-          <h1 className="mt-2 font-display text-[3.2rem] font-black leading-[0.98] tracking-tight sm:text-7xl lg:text-[6.2rem]">
+          <h1 className="mt-2 font-display text-[3.2rem] font-black leading-[0.98] tracking-tight sm:text-5xl lg:text-[4rem]">
             {words.map((w, i) => (
               <span key={w} className="block pb-1">
                 <motion.span initial={{ y: 12, opacity: 0.8 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.35, ease: [0.2, 0.8, 0.2, 1] }} className={cn('block', i === 1 && 'text-volt')}>{w}</motion.span>

@@ -2,7 +2,7 @@ import { Link } from 'wouter';
 import { Instagram, MessageCircle, GraduationCap, Apple } from 'lucide-react';
 import { useLang } from '@/lib/i18n';
 import { useStore } from '@/lib/store';
-import { Wordmark } from './Logo';
+import { BrandLogo } from './Logo';
 import { NAV, useShopNav } from './Navbar';
 
 function PayMark({ children, label }: { children: React.ReactNode; label: string }) {
@@ -19,7 +19,7 @@ export function Footer() {
       <div className="relative mx-auto max-w-7xl px-4 pb-8 pt-28 md:px-6">
         <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <div>
-            <Wordmark className="h-10" />
+            <BrandLogo variant="light" className="h-10" />
             <p className="mt-4 font-display text-2xl font-black text-volt">{t('slogan')}</p>
             <p className="mt-2 max-w-xs text-sm text-chalk/60">{t('aud_d')}</p>
           </div>

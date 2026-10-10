@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { Link } from 'wouter';
 import { ArrowLeft, ArrowRight, Compass, DoorOpen, Hand, MessageSquareHeart, MousePointerClick, Target, Zap, Shield, Flame, Sparkles } from 'lucide-react';
 import { useLang, useMeta } from '@/lib/i18n';
-import { BallIcon, Wordmark } from '@/components/rakla/Logo';
+import { BrandIcon, BrandLogo } from '@/components/rakla/Logo';
 
 const SWATCHES = [
   { hex: '#0B3D2E', ar: 'أخضر الملعب', en: 'Pitch Green', fg: '#F5F5F0', roleAr: 'اللون الأساسي — الهيرو والفوتر', roleEn: 'Primary — hero & footer' },
@@ -37,7 +37,7 @@ export default function Brand() {
         <div className="pitch-lines absolute inset-0" />
         <div className="relative mx-auto max-w-7xl px-4 pb-28 pt-14 md:px-6">
           <p className="font-display text-sm font-bold text-volt">{L('عن هذا المشروع · لوحة الهوية للمعلّم', 'About this project · Teacher brand board')}</p>
-          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="mt-6"><Wordmark className="h-16 md:h-24" /></motion.div>
+          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="mt-6 inline-flex rounded-2xl bg-chalk px-5 py-3"><BrandLogo variant="dark" className="h-14 md:h-16" /></motion.div>
           <p className="mt-6 max-w-2xl text-lg text-chalk/75">{L('ركلة متجر إلكتروني تجريبي لمعدات كرة القدم في الكويت، صُمم كمشروع مدرسي لعرض هوية تجارية متكاملة وتجربة تسوق ثنائية اللغة.', 'RAKLA is a demo football gear store for Kuwait, designed as a school project to present a complete brand identity and a bilingual shopping experience.')}</p>
           <Link href="/" className="mt-8 inline-flex items-center gap-2 rounded-full bg-volt px-6 py-3 font-display font-extrabold text-ink" data-testid="link-brand-store">{L('زيارة المتجر', 'Visit the store')}<Arrow className="h-5 w-5" /></Link>
         </div>
@@ -57,13 +57,12 @@ export default function Brand() {
 
         <motion.div {...fade} className={`${card} md:col-span-6`}>
           <p className={label}><span className="h-1 w-6 -skew-x-12 bg-volt" />{L('نسخ الشعار', 'Logo variants')}</p>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="grid h-40 place-items-center rounded-2xl bg-pitch p-4"><Wordmark className="h-12" /></div>
-            <div className="grid h-40 place-items-center rounded-2xl border border-ink/10 bg-chalk p-4"><Wordmark className="h-12" color="#0B3D2E" accent="#0B3D2E" /></div>
-            <div className="grid h-40 place-items-center rounded-2xl bg-ink p-4"><Wordmark className="h-12" showArabic={false} /></div>
-            <div className="flex h-40 items-center justify-center gap-4 rounded-2xl bg-volt p-4"><BallIcon className="h-20 w-20" /><BallIcon className="h-12 w-12" bg="#0A0F0D" /><BallIcon className="h-8 w-8" /></div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="flex h-40 flex-col items-center justify-center gap-3 rounded-2xl bg-pitch p-4"><BrandLogo variant="light" className="h-16 max-w-full" /><span className="text-xs font-semibold text-chalk/70">{L('للخلفيات الداكنة', 'For dark backgrounds')}</span></div>
+            <div className="flex h-40 flex-col items-center justify-center gap-3 rounded-2xl border border-ink/10 bg-chalk p-4"><BrandLogo variant="dark" className="h-16 max-w-full" /><span className="text-xs font-semibold text-stone">{L('للخلفيات الفاتحة', 'For light backgrounds')}</span></div>
+            <div className="flex h-40 flex-col items-center justify-center gap-3 rounded-2xl bg-pitch p-4"><BrandIcon className="h-20 w-20 rounded-2xl" /><span className="text-xs font-semibold text-chalk/70">{L('أيقونة التطبيق', 'App icon')}</span></div>
           </div>
-          <p className="mt-3 text-sm text-stone">{L('كلمة RAKLA مائلة وعريضة، والحرف الأخير كرة مع خطوط سرعة. الأيقونة المضغوطة للجوال والفافيكون.', 'Bold italic RAKLA with a ball-and-speed-slash final letter. The compact icon is used for mobile and favicon.')}</p>
+          <p className="mt-3 text-sm text-stone">{L('شعارات ركلة الرسمية: النسخة البيضاء للخلفيات الداكنة، والنسخة الخضراء للخلفيات الفاتحة، وأيقونة الكرة لواجهات الجوال والفافيكون.', 'Official RAKLA marks: white on dark backgrounds, green on light backgrounds, and the football icon for compact mobile surfaces and the favicon.')}</p>
         </motion.div>
 
         <motion.div {...fade} className={`${card} md:col-span-6`}>

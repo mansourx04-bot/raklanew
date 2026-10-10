@@ -5,7 +5,7 @@ import { Heart, Languages, Menu, Search, ShoppingBag } from 'lucide-react';
 import { useLang, type TKey } from '@/lib/i18n';
 import { useStore } from '@/lib/store';
 import type { Category } from '@/lib/catalog';
-import { Wordmark, BallIcon } from './Logo';
+import { BrandLogo, BrandIcon } from './Logo';
 import { Drawer } from './Overlay';
 import { cn } from '@/lib/utils';
 
@@ -62,11 +62,8 @@ export function Navbar() {
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-1.5 px-4 sm:gap-3 md:h-[72px] md:px-6">
         <button className={cn(iconBtn, 'lg:hidden')} onClick={() => setMenu(true)} aria-label={t('menu')} data-testid="button-menu"><Menu className="h-5 w-5" /></button>
         <Link href="/" className="flex shrink-0 items-center" aria-label="RAKLA ركلة" data-testid="link-logo">
-          <span className="inline-flex items-center gap-1 sm:hidden" dir="ltr">
-            <BallIcon className="h-6 w-6" />
-            <Wordmark className="h-[18px]" showArabic={false} />
-          </span>
-          <Wordmark className="hidden h-8 sm:inline-flex md:h-9" />
+          <BrandIcon className="h-[34px] w-[34px] sm:hidden" />
+          <BrandLogo variant="light" className="hidden h-10 sm:block" />
         </Link>
         <nav className="ms-6 hidden items-center gap-1 lg:flex" aria-label="primary">
           {NAV.map((n) => (
@@ -95,7 +92,7 @@ export function Navbar() {
           </button>
         </div>
       </div>
-      <Drawer open={menu} onOpenChange={setMenu} side="start" title={t('menu')} testId="drawer-menu">
+      <Drawer open={menu} onOpenChange={setMenu} side="start" title={<span className="flex items-center gap-3"><BrandLogo variant="light" className="h-8" /><span>{t('menu')}</span></span>} testId="drawer-menu">
         <nav className="flex flex-col p-3">
           {NAV.map((n, i) => (
             <motion.button key={n.key} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.05 * i }}
