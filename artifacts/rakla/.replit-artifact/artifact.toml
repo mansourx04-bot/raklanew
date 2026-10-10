@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "ركلة | RAKLA"
+description = "A premium bilingual Arabic/English football gear school-project storefront for Kuwait with local products, browser-persisted cart and favorites, demo checkout, and a brand board."
+version = "1.0.0"
+id = "artifacts/rakla"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21932
+
+[services.development]
+run = "pnpm --filter @workspace/rakla run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/rakla", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/rakla/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21932"
+BASE_PATH = "/"

@@ -1,0 +1,1 @@
+- [RAKLA project scope](rakla-scope.md) — school-project Kuwait football storefront; Arabic default, bilingual; browser-only shopping and demo checkout.

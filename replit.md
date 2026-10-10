@@ -1,9 +1,10 @@
-# [Project name]
+# ركلة | RAKLA — The Shop
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A bilingual Kuwaiti football equipment storefront built as the school project "The Shop".
 
 ## Run & Operate
 
+- `pnpm --filter @workspace/rakla run dev` — storefront, using its managed workflow
 - `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
@@ -30,7 +31,7 @@ _Populate as you build — non-obvious choices a reader couldn't infer from the 
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+Arabic is the default (RTL), with a complete English (LTR) toggle. Local products, cart and favorites support a browser-only shopping demonstration. Checkout and newsletter acknowledgements are demonstrations: no payments are collected, orders transmitted, or emails subscribed. The teacher's brand board is at `/brand`.
 
 ## User preferences
 
