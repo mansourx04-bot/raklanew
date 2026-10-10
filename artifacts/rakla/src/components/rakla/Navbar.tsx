@@ -59,10 +59,13 @@ export function Navbar() {
 
   return (
     <header className={cn('sticky top-0 z-40 transition-colors duration-300', scrolled ? 'bg-ink/92 backdrop-blur-md shadow-[0_8px_30px_-12px_rgba(0,0,0,.5)]' : 'bg-pitch')}>
-      <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 md:h-[72px] md:px-6">
+      <div className="mx-auto flex h-16 max-w-7xl items-center gap-1.5 px-4 sm:gap-3 md:h-[72px] md:px-6">
         <button className={cn(iconBtn, 'lg:hidden')} onClick={() => setMenu(true)} aria-label={t('menu')} data-testid="button-menu"><Menu className="h-5 w-5" /></button>
-        <Link href="/" className="flex items-center" aria-label="RAKLA ركلة" data-testid="link-logo">
-          <BallIcon className="h-9 w-9 sm:hidden" />
+        <Link href="/" className="flex shrink-0 items-center" aria-label="RAKLA ركلة" data-testid="link-logo">
+          <span className="inline-flex items-center gap-1 sm:hidden" dir="ltr">
+            <BallIcon className="h-6 w-6" />
+            <Wordmark className="h-[18px]" showArabic={false} />
+          </span>
           <Wordmark className="hidden h-8 sm:inline-flex md:h-9" />
         </Link>
         <nav className="ms-6 hidden items-center gap-1 lg:flex" aria-label="primary">

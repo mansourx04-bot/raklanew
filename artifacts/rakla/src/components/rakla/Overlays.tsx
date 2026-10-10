@@ -262,7 +262,6 @@ export function QuickView() {
           <Stars rating={p.rating} reviews={p.reviews} />
           <Price price={p.price} old={p.oldPrice} big />
           <p className="text-sm leading-relaxed text-ink/75">{p.desc[lang]}</p>
-          <p className="text-xs text-stone" lang={lang === 'ar' ? 'en' : 'ar'} dir={lang === 'ar' ? 'ltr' : 'rtl'}>{p.desc[lang === 'ar' ? 'en' : 'ar']}</p>
           <div className="flex flex-wrap gap-1.5">
             {p.surfaces.map((x) => <span key={x} className="rounded-full bg-pitch/8 px-2.5 py-1 font-display text-[11px] font-bold text-pitch">{x} · {t(x)}</span>)}
           </div>

@@ -12,6 +12,7 @@ import { Footer } from '@/components/rakla/Footer';
 import { GlobalOverlays } from '@/components/rakla/Overlays';
 import Home from '@/pages/Home';
 import Brand from '@/pages/Brand';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const queryClient = new QueryClient();
 
@@ -48,6 +49,7 @@ function RoutedErrorBoundary({ children }: { children: ReactNode }) {
 
 function Shell() {
   const { dir } = useLang();
+  const isMobile = useIsMobile();
   const [loc] = useLocation();
   useEffect(() => { if (loc !== '/') window.scrollTo({ top: 0 }); }, [loc]);
   return (
@@ -56,7 +58,7 @@ function Shell() {
       <main><Router /></main>
       <Footer />
       <GlobalOverlays />
-      <Toaster position={dir === 'rtl' ? 'bottom-left' : 'bottom-right'} dir={dir} richColors={false}
+      <Toaster position={isMobile ? 'top-center' : dir === 'rtl' ? 'bottom-left' : 'bottom-right'} mobileOffset={{ top: 'calc(env(safe-area-inset-top) + 80px)', left: 16, right: 16 }} dir={dir} richColors={false}
         toastOptions={{ classNames: { toast: '!bg-ink !text-chalk !border-volt/40 !rounded-2xl !font-sans', description: '!text-chalk/60', icon: '!text-volt' } }} />
     </div>
   );
