@@ -1,6 +1,2 @@
-export * from "./users";
-export * from "./sessions";
-export * from "./carts";
-export * from "./favorites";
-export * from "./orders";
-export * from "./reviews";
+// This workspace's database models are maintained only for apps that use PostgreSQL.
+export {};
