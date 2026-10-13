@@ -1,4 +1,6 @@
-import { useEffect, type ReactNode } from 'react';
+'use client';
+
+import { useEffect, useState, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MotionConfig } from 'framer-motion';
 import { Toaster } from 'sonner';
@@ -12,12 +14,11 @@ import { Navbar } from '@/components/rakla/Navbar';
 import { Footer } from '@/components/rakla/Footer';
 import { GlobalOverlays } from '@/components/rakla/Overlays';
 import Home from '@/store-pages/Home';
+import Products from '@/store-pages/Products';
 import Brand from '@/store-pages/Brand';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { LoginPage, SignupPage } from '@/store-pages/AuthPages';
 import Orders from '@/store-pages/Orders';
-
-const queryClient = new QueryClient();
 
 function NotFound() {
   const { t } = useLang();
@@ -38,7 +39,7 @@ function Router() {
     <RoutedErrorBoundary>
       <Switch>
         <Route path="/" component={Home} />
-        <Route path="/products" component={Home} />
+        <Route path="/products" component={Products} />
         <Route path="/products/:productId" component={ProductDetailRoute} />
         <Route path="/cart" component={CartRoute} />
         <Route path="/brand" component={Brand} />
@@ -89,7 +90,10 @@ function Shell() {
   );
 }
 
-function App() {
+function App({ initialPath = '/' }: { initialPath?: string }) {
+  const [queryClient] = useState(() => new QueryClient());
+  const routerBase = initialPath === '/rakla' || initialPath.startsWith('/rakla/') ? '/rakla' : '';
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -97,7 +101,7 @@ function App() {
           <LangProvider>
             <AuthProvider>
               <StoreProvider>
-                <WouterRouter>
+                <WouterRouter ssrPath={initialPath} base={routerBase}>
                   <Shell />
                 </WouterRouter>
               </StoreProvider>

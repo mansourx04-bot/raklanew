@@ -7,6 +7,7 @@ export type ResolvedLine = CartLine & { name: Bi; price: number; image: string; 
 
 function safeRead<T>(key: string, valid: (v: unknown) => v is T, fallback: T): T {
   try {
+    if (typeof window === 'undefined') return fallback;
     const raw = localStorage.getItem(key);
     if (!raw) return fallback;
     const v = JSON.parse(raw);
@@ -67,8 +68,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const productsError = productQuery.isError
     ? (productQuery.error as { data?: { error?: string } }).data?.error ?? null
     : null;
-  const [raw, setRaw] = useState<CartLine[]>(() => safeRead('rakla:cart', isLines, []));
-  const [favs, setFavs] = useState<string[]>(() => safeRead('rakla:favs', isIds, []));
+  const [raw, setRaw] = useState<CartLine[]>([]);
+  const [favs, setFavs] = useState<string[]>([]);
+  const [storageReady, setStorageReady] = useState(false);
   const [bump, setBump] = useState(0);
   const [cartOpen, setCartOpen] = useState(false);
   const [favOpen, setFavOpen] = useState(false);
@@ -80,8 +82,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [bundleOpen, setBundleOpen] = useState(false);
   const [filters, setF] = useState<Filters>(DEFAULT_FILTERS);
 
-  useEffect(() => { try { localStorage.setItem('rakla:cart', JSON.stringify(raw)); } catch { /* ignore */ } }, [raw]);
-  useEffect(() => { try { localStorage.setItem('rakla:favs', JSON.stringify(favs)); } catch { /* ignore */ } }, [favs]);
+  useEffect(() => {
+    setRaw(safeRead('rakla:cart', isLines, []));
+    setFavs(safeRead('rakla:favs', isIds, []));
+    setStorageReady(true);
+  }, []);
+  useEffect(() => { if (storageReady) try { localStorage.setItem('rakla:cart', JSON.stringify(raw)); } catch { /* ignore */ } }, [raw, storageReady]);
+  useEffect(() => { if (storageReady) try { localStorage.setItem('rakla:favs', JSON.stringify(favs)); } catch { /* ignore */ } }, [favs, storageReady]);
 
   const lines = useMemo(() => raw.map((l) => {
     if (l.id === BUNDLE.id) return { ...l, name: { ar: 'طقم يوم المباراة', en: 'Match-Day Bundle' }, price: BUNDLE.price, image: BUNDLE.image, isBundle: true };
@@ -126,18 +133,21 @@ export function useStore() {
 }
 
 export function useCountdown() {
-  const [end] = useState(() => {
+  const [end, setEnd] = useState(0);
+  const [now, setNow] = useState(0);
+  useEffect(() => {
     const HOURS = 47 * 3600 * 1000 + 23 * 60 * 1000;
-    const now = Date.now();
     let e = Number(safeRead<number>('rakla:bundleEnd', (v): v is number => typeof v === 'number', 0));
-    if (!e || e < now || e - now > HOURS + 1000) {
-      e = now + HOURS;
+    const current = Date.now();
+    if (!e || e < current || e - current > HOURS + 1000) {
+      e = current + HOURS;
       try { localStorage.setItem('rakla:bundleEnd', JSON.stringify(e)); } catch { /* ignore */ }
     }
-    return e;
-  });
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => { const i = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(i); }, []);
+    setEnd(e);
+    setNow(current);
+    const i = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(i);
+  }, []);
   const left = Math.max(0, end - now);
   return { d: Math.floor(left / 864e5), h: Math.floor((left / 36e5) % 24), m: Math.floor((left / 6e4) % 60), s: Math.floor((left / 1e3) % 60) };
 }

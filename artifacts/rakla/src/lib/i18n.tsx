@@ -204,12 +204,18 @@ function readLang(): Lang {
 }
 
 export function LangProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Lang>(readLang);
+  const [lang, setLangState] = useState<Lang>('ar');
+  const [langReady, setLangReady] = useState(false);
   useEffect(() => {
+    setLangState(readLang());
+    setLangReady(true);
+  }, []);
+  useEffect(() => {
+    if (!langReady) return;
     document.documentElement.lang = lang;
     document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
     try { localStorage.setItem('rakla:lang', lang); } catch { /* ignore */ }
-  }, [lang]);
+  }, [lang, langReady]);
   const t = useCallback((k: TKey, vars?: Record<string, string>) => {
     let s = dict[k]?.[lang === 'ar' ? 0 : 1] ?? k;
     if (vars) for (const [a, b] of Object.entries(vars)) s = s.replace(`{${a}}`, b);

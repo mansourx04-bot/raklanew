@@ -1,5 +1,5 @@
 import Storefront from '../Storefront';
 
 export default function BrandPage() {
-  return <Storefront />;
+  return <Storefront initialPath="/brand" />;
 }

@@ -1,1 +1,2 @@
 - [RAKLA project scope](rakla-scope.md) — school-project Kuwait football storefront; Arabic default, bilingual; browser-only shopping and demo checkout.
+- [RAKLA Next.js SSR routing](rakla-next-ssr.md) — Keep the storefront server-rendered and pass the route path into Wouter.

@@ -1,5 +1,5 @@
 import Storefront from '../Storefront';
 
 export default function LoginPage() {
-  return <Storefront />;
+  return <Storefront initialPath="/login" />;
 }
