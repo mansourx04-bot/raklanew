@@ -137,7 +137,7 @@ function SurfaceGlyph({ s }: { s: Surface }) {
 
 export function SurfaceAndShop() {
   const { t, lang } = useLang();
-  const { filters, setFilters, products, productsLoading, productsUnavailable } = useStore();
+  const { filters, setFilters, products, productsLoading, productsUnavailable, productsError } = useStore();
   const list = useMemo(() => {
     let l = products.filter((p) => (filters.category === 'all' || p.category === filters.category) && (filters.surface === 'all' || p.surfaces.includes(filters.surface)) && matches(p, filters.q));
     if (filters.sort === 'low') l = [...l].sort((a, b) => a.price - b.price);
@@ -207,7 +207,11 @@ export function SurfaceAndShop() {
           <p className="py-10 text-center font-semibold text-stone" role="status" data-testid="status-products-loading">{t('products_loading')}</p>
         )}
         {productsUnavailable && (
-          <p className="mt-6 rounded-2xl border border-ink/10 bg-ink/5 px-5 py-4 text-center text-sm font-semibold text-stone" role="alert" data-testid="status-products-error">{t('products_error')}</p>
+          <p className="mt-6 rounded-2xl border border-ink/10 bg-ink/5 px-5 py-4 text-center text-sm font-semibold text-stone" role="alert" data-testid="status-products-error">
+            {productsError?.includes('MONGODB_URI')
+              ? (lang === 'ar' ? 'إعداد قاعدة البيانات غير موجود. أضف MONGODB_URI إلى Replit Secrets.' : 'Database setup is missing. Add MONGODB_URI to Replit Secrets.')
+              : (lang === 'ar' ? 'تعذر تحميل المنتجات. حاول مرة أخرى بعد قليل.' : 'Products could not be loaded. Please try again shortly.')}
+          </p>
         )}
         {list.length === 0 && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center rounded-3xl border-2 border-dashed border-pitch/20 px-6 py-16 text-center" data-testid="state-empty-grid">

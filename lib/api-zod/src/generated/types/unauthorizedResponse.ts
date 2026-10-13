@@ -8,6 +8,6 @@
 import type { Error } from './error';
 
 /**
- * A valid Bearer token is required
+ * A valid session cookie is required
  */
 export type UnauthorizedResponse = Error;

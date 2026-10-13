@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { getGetProductsQueryKey, useGetProducts } from '@workspace/api-client-react';
-import { BUNDLE, DELIVERY_FEE, FREE_OVER, PRODUCTS as LOCAL_PRODUCTS, type Bi, type Category, type Product, type Surface } from './catalog';
+import { BUNDLE, DELIVERY_FEE, FREE_OVER, type Bi, type Category, type Product, type Surface } from './catalog';
 
 export type CartLine = { key: string; id: string; size: string; qty: number };
 export type ResolvedLine = CartLine & { name: Bi; price: number; image: string; isBundle: boolean };
@@ -27,6 +27,7 @@ type Ctx = {
   products: Product[];
   productsLoading: boolean;
   productsUnavailable: boolean;
+  productsError: string | null;
   bundleFull: number;
   count: number;
   subtotal: number;
@@ -54,18 +55,18 @@ const StoreCtx = createContext<Ctx | null>(null);
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const productQuery = useGetProducts({ query: { queryKey: getGetProductsQueryKey(), retry: false, staleTime: 5 * 60 * 1000 } });
-  const missingMongoSecret = productQuery.error
-    && (productQuery.error as { status?: number; data?: { error?: string } }).status === 503
-    && (productQuery.error as { data?: { error?: string } }).data?.error === 'MONGODB_URI_MISSING';
   const products: Product[] = useMemo(() => {
-    if (!productQuery.data) return missingMongoSecret ? LOCAL_PRODUCTS : [];
+    if (!productQuery.data) return [];
     return productQuery.data.map((p) => ({
       ...p,
       oldPrice: p.oldPrice ?? undefined,
       tag: p.tag ?? undefined,
-      image: p.image.startsWith('http') ? p.image : `${import.meta.env.BASE_URL}${p.image.replace(/^\/+/, '')}`,
+      image: p.image.startsWith('http') ? p.image : `/${p.image.replace(/^\/+/, '')}`,
     }));
-  }, [productQuery.data, missingMongoSecret]);
+  }, [productQuery.data]);
+  const productsError = productQuery.isError
+    ? (productQuery.error as { data?: { error?: string } }).data?.error ?? null
+    : null;
   const [raw, setRaw] = useState<CartLine[]>(() => safeRead('rakla:cart', isLines, []));
   const [favs, setFavs] = useState<string[]>(() => safeRead('rakla:favs', isIds, []));
   const [bump, setBump] = useState(0);
@@ -110,7 +111,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const setFilters = useCallback((f: Partial<Filters>) => setF((o) => ({ ...o, ...f })), []);
 
   const value: Ctx = {
-    lines, products, productsLoading: productQuery.isLoading, productsUnavailable: productQuery.isError && !missingMongoSecret, bundleFull: currentBundleFull,
+    lines, products, productsLoading: productQuery.isLoading, productsUnavailable: productQuery.isError, productsError, bundleFull: currentBundleFull,
     count, subtotal, delivery, total: subtotal + delivery, add, setQty, remove, clear, favs, toggleFav, bump,
     cartOpen, setCartOpen, favOpen, setFavOpen, searchOpen, setSearchOpen, quick, setQuick, checkoutOpen, setCheckoutOpen,
     contactOpen, setContactOpen, guideOpen, setGuideOpen, bundleOpen, setBundleOpen, filters, setFilters,

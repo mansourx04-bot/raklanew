@@ -60,7 +60,6 @@ export const SignUpBody = zod.object({
 })
 
 export const SignUpResponse = zod.object({
-  "token": zod.string(),
   "user": zod.object({
   "id": zod.string(),
   "displayName": zod.string(),
@@ -83,7 +82,6 @@ export const LogInBody = zod.object({
 })
 
 export const LogInResponse = zod.object({
-  "token": zod.string(),
   "user": zod.object({
   "id": zod.string(),
   "displayName": zod.string(),
@@ -101,6 +99,14 @@ export const GetMeResponse = zod.object({
   "displayName": zod.string(),
   "email": zod.string(),
   "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Clear the current session cookie
+ */
+export const LogOutResponse = zod.object({
+  "success": zod.boolean()
 })
 
 
@@ -128,7 +134,7 @@ export const GetMyOrdersResponseItem = zod.object({
   "phone": zod.string(),
   "area": zod.string(),
   "paymentMethod": zod.string(),
-  "status": zod.enum(['processing']),
+  "status": zod.enum(['pending', 'paid']),
   "createdAt": zod.coerce.date()
 })
 export const GetMyOrdersResponse = zod.array(GetMyOrdersResponseItem)
@@ -183,7 +189,7 @@ export const CreateOrderResponse = zod.object({
   "phone": zod.string(),
   "area": zod.string(),
   "paymentMethod": zod.string(),
-  "status": zod.enum(['processing']),
+  "status": zod.enum(['pending', 'paid']),
   "createdAt": zod.coerce.date()
 })
 
@@ -216,7 +222,7 @@ export const GetOrderResponse = zod.object({
   "phone": zod.string(),
   "area": zod.string(),
   "paymentMethod": zod.string(),
-  "status": zod.enum(['processing']),
+  "status": zod.enum(['pending', 'paid']),
   "createdAt": zod.coerce.date()
 })
 

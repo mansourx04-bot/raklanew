@@ -87,7 +87,7 @@ export function Navbar() {
             <ShoppingBag className="h-5 w-5" /><CountBadge n={s.count} testId="text-cart-count" />
           </motion.button>
           <Link href={auth.user ? '/orders' : '/login'} className={cn(iconBtn, 'xl:inline-flex xl:h-10 xl:w-auto xl:gap-2 xl:px-2')} aria-label={auth.user ? t('nav_account') : t('nav_login')} title={auth.user ? t('nav_account') : t('nav_login')} data-testid="link-account">
-            <UserRound className="h-5 w-5 shrink-0" /><span className="hidden whitespace-nowrap xl:inline">{auth.user ? t('nav_account') : t('nav_login')}</span>
+            <UserRound className="h-5 w-5 shrink-0" /><span className="hidden max-w-36 truncate whitespace-nowrap xl:inline">{auth.user ? auth.user.displayName : t('nav_login')}</span>
           </Link>
           {auth.user && <button onClick={auth.logout} className={cn(iconBtn, 'hidden lg:grid')} aria-label={t('nav_logout')} title={t('nav_logout')} data-testid="button-logout"><LogOut className="h-4 w-4" /></button>}
           <button onClick={toggle} data-testid="button-lang"
@@ -110,7 +110,7 @@ export function Navbar() {
           ))}
           <Link href="/brand" onClick={() => setMenu(false)} data-testid="link-mobile-brand" className="px-3 py-4 font-display text-lg font-bold text-pitch underline-offset-4 hover:underline">{t('nav_brand')}</Link>
           <Link href={auth.user ? '/orders' : '/login'} onClick={() => setMenu(false)} data-testid="link-mobile-account" className="flex items-center gap-2 px-3 py-4 font-display text-lg font-bold text-pitch">
-            <UserRound className="h-5 w-5" />{auth.user ? t('nav_orders') : t('nav_login')}
+            <UserRound className="h-5 w-5" />{auth.user ? `${auth.user.displayName} · ${t('nav_orders')}` : t('nav_login')}
           </Link>
           {!auth.user && <Link href="/signup" onClick={() => setMenu(false)} data-testid="link-mobile-signup" className="px-3 py-3 text-sm font-semibold text-pitch">{t('nav_signup')}</Link>}
           {auth.user && <button onClick={() => { auth.logout(); setMenu(false); }} data-testid="button-mobile-logout" className="flex items-center gap-2 px-3 py-4 text-start font-display text-lg font-bold text-pitch"><LogOut className="h-5 w-5" />{t('nav_logout')}</button>}

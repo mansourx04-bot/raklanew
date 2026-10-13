@@ -97,11 +97,11 @@ function EmptyState({ icon: Icon, title, desc, onAction, action }: { icon: typeo
 export function CartDrawer() {
   const { t } = useLang();
   const s = useStore();
-  const { token } = useAuth();
+  const { user } = useAuth();
   const [, setLocation] = useLocation();
   const startCheckout = () => {
     s.setCartOpen(false);
-    if (!token) setLocation('/login?redirect=/?checkout=1');
+    if (!user) setLocation('/login?redirect=/?checkout=1');
     else s.setCheckoutOpen(true);
   };
   return (
@@ -408,7 +408,7 @@ type Order = { no: string; lines: ResolvedLine[]; subtotal: number; delivery: nu
 export function CheckoutDialog() {
   const { t, lang } = useLang();
   const s = useStore();
-  const { token, user } = useAuth();
+  const { user } = useAuth();
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const createOrder = useCreateOrder();
@@ -428,7 +428,7 @@ export function CheckoutDialog() {
   useEffect(() => { if (!s.checkoutOpen) { setOrder(null); setSubmitError(''); form.reset(); } }, [s.checkoutOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const submit = (v: F) => {
-    if (!token || !user) {
+    if (!user) {
       s.setCheckoutOpen(false);
       setLocation('/login?redirect=/?checkout=1');
       return;

@@ -8,7 +8,7 @@ type BrandLogoProps = {
 export function BrandLogo({ variant, className }: BrandLogoProps) {
   return (
     <img
-      src={`${import.meta.env.BASE_URL}rakla-logo-${variant}.png`}
+      src={`/rakla-logo-${variant}.png`}
       alt="RAKLA ركلة"
       className={cn('block w-auto object-contain', className)}
     />
@@ -18,7 +18,7 @@ export function BrandLogo({ variant, className }: BrandLogoProps) {
 export function BrandIcon({ className }: { className?: string }) {
   return (
     <img
-      src={`${import.meta.env.BASE_URL}rakla-icon.png`}
+      src="/rakla-icon.png"
       alt="RAKLA"
       className={cn('block aspect-square object-contain', className)}
     />

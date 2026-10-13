@@ -25,6 +25,7 @@ import type {
   Error,
   HealthStatus,
   LoginInput,
+  LogoutResponse,
   Order,
   OrderInput,
   Product,
@@ -467,6 +468,80 @@ export function useGetMe<TData = Awaited<ReturnType<typeof getMe>>, TError = Err
 
 
 
+
+export const getLogOutUrl = () => {
+
+
+
+
+  return `/api/auth/logout`
+}
+
+/**
+ * @summary Clear the current session cookie
+ */
+export const logOut = async ( options?: Parameters<typeof customFetch>[1]): Promise<LogoutResponse> => {
+
+  return customFetch<LogoutResponse>(getLogOutUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getLogOutMutationKey = () => ['logOut'] as const;
+
+export const getLogOutMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof logOut>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof logOut>>, TError,void, TContext> => {
+
+const mutationKey = getLogOutMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof logOut>>, void> = () => {
+
+
+          return  logOut(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type LogOutMutationResult = NonNullable<Awaited<ReturnType<typeof logOut>>>
+
+    export type LogOutMutationError = ErrorType<unknown>
+
+
+    /**
+ * @summary Clear the current session cookie
+ */
+export const useLogOut = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof logOut>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof logOut>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getLogOutMutationOptions(options));
+    }
 
 export const getGetMyOrdersUrl = () => {
 

@@ -2,20 +2,20 @@ import { useEffect, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MotionConfig } from 'framer-motion';
 import { Toaster } from 'sonner';
-import { Link, Route, Switch, useLocation, Router as WouterRouter } from 'wouter';
+import { Link, Route, Switch, useLocation, useRoute, Router as WouterRouter } from 'wouter';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { LangProvider, useLang } from '@/lib/i18n';
-import { StoreProvider } from '@/lib/store';
+import { StoreProvider, useStore } from '@/lib/store';
 import { AuthProvider } from '@/lib/auth';
 import { Navbar } from '@/components/rakla/Navbar';
 import { Footer } from '@/components/rakla/Footer';
 import { GlobalOverlays } from '@/components/rakla/Overlays';
-import Home from '@/pages/Home';
-import Brand from '@/pages/Brand';
+import Home from '@/store-pages/Home';
+import Brand from '@/store-pages/Brand';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { LoginPage, SignupPage } from '@/pages/AuthPages';
-import Orders from '@/pages/Orders';
+import { LoginPage, SignupPage } from '@/store-pages/AuthPages';
+import Orders from '@/store-pages/Orders';
 
 const queryClient = new QueryClient();
 
@@ -38,6 +38,9 @@ function Router() {
     <RoutedErrorBoundary>
       <Switch>
         <Route path="/" component={Home} />
+        <Route path="/products" component={Home} />
+        <Route path="/products/:productId" component={ProductDetailRoute} />
+        <Route path="/cart" component={CartRoute} />
         <Route path="/brand" component={Brand} />
         <Route path="/login" component={LoginPage} />
         <Route path="/signup" component={SignupPage} />
@@ -46,6 +49,22 @@ function Router() {
       </Switch>
     </RoutedErrorBoundary>
   );
+}
+
+function ProductDetailRoute() {
+  const [, params] = useRoute('/products/:productId');
+  const store = useStore();
+  useEffect(() => {
+    const product = store.products.find((item) => item.id === params?.productId);
+    if (product) store.setQuick(product);
+  }, [params?.productId, store.products, store.setQuick]);
+  return <Home />;
+}
+
+function CartRoute() {
+  const store = useStore();
+  useEffect(() => { store.setCartOpen(true); }, [store.setCartOpen]);
+  return <Home />;
 }
 
 function RoutedErrorBoundary({ children }: { children: ReactNode }) {
@@ -78,7 +97,7 @@ function App() {
           <LangProvider>
             <AuthProvider>
               <StoreProvider>
-                <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+                <WouterRouter>
                   <Shell />
                 </WouterRouter>
               </StoreProvider>

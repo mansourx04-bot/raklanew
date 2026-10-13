@@ -12,6 +12,7 @@ export * from './biText';
 export * from './error';
 export * from './healthStatus';
 export * from './loginInput';
+export * from './logoutResponse';
 export * from './order';
 export * from './orderInput';
 export * from './orderInputPaymentMethod';

@@ -17,7 +17,7 @@ export type Product = {
   image: string;
 };
 
-export const img = (f: string) => `${import.meta.env.BASE_URL}images/${f}`;
+export const img = (f: string) => `/images/${f}`;
 
 const BOOT = ['38', '39', '40', '41', '42', '43', '44', '45', '46'];
 const WEAR = ['S', 'M', 'L', 'XL'];

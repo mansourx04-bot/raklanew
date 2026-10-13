@@ -99,8 +99,11 @@ export interface LoginInput {
 }
 
 export interface AuthResponse {
-  token: string;
   user: User;
+}
+
+export interface LogoutResponse {
+  success: boolean;
 }
 
 export interface OrderItemInput {
@@ -156,7 +159,8 @@ export type OrderStatus = typeof OrderStatus[keyof typeof OrderStatus];
 
 
 export const OrderStatus = {
-  processing: 'processing',
+  pending: 'pending',
+  paid: 'paid',
 } as const;
 
 export interface Order {
@@ -176,7 +180,7 @@ export interface Order {
 }
 
 /**
- * A valid Bearer token is required
+ * A valid session cookie is required
  */
 export type UnauthorizedResponse = Error;
 
