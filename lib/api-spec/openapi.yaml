@@ -1,22 +1,23 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
-  version: 0.1.0
-  description: API specification
+  version: 0.2.0
+  description: RAKLA store accounts, persistent shopping data, orders and reviews
 servers:
   - url: /api
-    description: Base API path
 tags:
   - name: health
-    description: Health operations
+  - name: auth
+  - name: account
+  - name: cart
+  - name: orders
+  - name: reviews
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +25,649 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /auth/signup:
+    post:
+      operationId: signUp
+      tags: [auth]
+      summary: Create an account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignUpInput"
+      responses:
+        "201":
+          description: Account created and signed in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Invalid account details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /auth/login:
+    post:
+      operationId: logIn
+      tags: [auth]
+      summary: Log in
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Signed in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Email or password is incorrect
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /auth/logout:
+    post:
+      operationId: logOut
+      tags: [auth]
+      summary: End the current session
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Signed out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Success"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /auth/me:
+    get:
+      operationId: getCurrentUser
+      tags: [auth]
+      summary: Read current session
+      responses:
+        "200":
+          description: Current user or null
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentUser"
+  /account:
+    get:
+      operationId: getAccount
+      tags: [account]
+      summary: Read the signed-in user's account and own history
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Private account details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountData"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    delete:
+      operationId: deleteAccount
+      tags: [account]
+      summary: Delete the signed-in user's own account and private data
+      security:
+        - sessionCookie: []
+      responses:
+        "204":
+          description: Account deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /account/profile:
+    patch:
+      operationId: updateProfile
+      tags: [account]
+      summary: Update the signed-in user's display name
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfileUpdate"
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /account/password:
+    put:
+      operationId: changePassword
+      tags: [account]
+      summary: Change password after checking the current password
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordChange"
+      responses:
+        "200":
+          description: Password changed and current session renewed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Success"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          description: Not signed in or current password is incorrect
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /account/cart:
+    get:
+      operationId: getCart
+      tags: [cart]
+      summary: Read the signed-in user's saved cart
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Saved cart
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CartData"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    put:
+      operationId: saveCart
+      tags: [cart]
+      summary: Replace the signed-in user's saved cart
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CartInput"
+      responses:
+        "200":
+          description: Saved cart
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CartData"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /account/favorites:
+    get:
+      operationId: getFavorites
+      tags: [cart]
+      summary: Read the signed-in user's favorites
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Favorite product identifiers
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FavoritesData"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    put:
+      operationId: saveFavorites
+      tags: [cart]
+      summary: Replace the signed-in user's favorites
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FavoritesInput"
+      responses:
+        "200":
+          description: Favorite product identifiers
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FavoritesData"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /orders:
+    get:
+      operationId: getOrders
+      tags: [orders]
+      summary: List only the signed-in user's own orders
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Own order history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Order"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      operationId: createOrder
+      tags: [orders]
+      summary: Save a demo order for the signed-in user
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderInput"
+      responses:
+        "201":
+          description: Order saved without collecting payment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /products/reviews-summary:
+    get:
+      operationId: getReviewSummaries
+      tags: [reviews]
+      summary: Get average rating and review count for each reviewed product
+      responses:
+        "200":
+          description: Public product review summaries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReviewSummary"
+  /products/{productId}/reviews:
+    get:
+      operationId: getProductReviews
+      tags: [reviews]
+      summary: List public reviews for a product
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Public product reviews
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductReviews"
+    post:
+      operationId: createReview
+      tags: [reviews]
+      summary: Add the signed-in user's review
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewInput"
+      responses:
+        "201":
+          description: Review added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          description: This user already reviewed this product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /account/reviews:
+    get:
+      operationId: getMyReviews
+      tags: [reviews]
+      summary: List only the signed-in user's own reviews
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Own reviews
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Review"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /reviews/{reviewId}:
+    patch:
+      operationId: updateReview
+      tags: [reviews]
+      summary: Edit the signed-in user's own review
+      parameters:
+        - name: reviewId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewInput"
+      responses:
+        "200":
+          description: Updated review
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteReview
+      tags: [reviews]
+      summary: Delete the signed-in user's own review
+      parameters:
+        - name: reviewId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      security:
+        - sessionCookie: []
+      responses:
+        "204":
+          description: Review deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: rakla_session
+  responses:
+    BadRequest:
+      description: Invalid input
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Unauthorized:
+      description: Sign in required
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Forbidden:
+      description: The signed-in user does not own this record
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: Record does not exist
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
   schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+    Success:
+      type: object
+      required: [success]
+      properties:
+        success:
+          type: boolean
     HealthStatus:
       type: object
+      required: [status]
       properties:
         status:
           type: string
-      required:
-        - status
-
+    SignUpInput:
+      type: object
+      required: [displayName, email, password]
+      properties:
+        displayName: { type: string, minLength: 2, maxLength: 60 }
+        email: { type: string, format: email, maxLength: 254 }
+        password: { type: string, minLength: 8, maxLength: 72 }
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email, maxLength: 254 }
+        password: { type: string, minLength: 1, maxLength: 72 }
+    ProfileUpdate:
+      type: object
+      required: [displayName]
+      properties:
+        displayName: { type: string, minLength: 2, maxLength: 60 }
+    PasswordChange:
+      type: object
+      required: [currentPassword, newPassword]
+      properties:
+        currentPassword: { type: string, minLength: 1, maxLength: 72 }
+        newPassword: { type: string, minLength: 8, maxLength: 72 }
+    User:
+      type: object
+      required: [id, displayName, email, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        displayName: { type: string }
+        email: { type: string, format: email }
+        createdAt: { type: string, format: date-time }
+    AuthResponse:
+      type: object
+      required: [user]
+      properties:
+        user: { $ref: "#/components/schemas/User" }
+    CurrentUser:
+      type: object
+      required: [user]
+      properties:
+        user:
+          oneOf:
+            - $ref: "#/components/schemas/User"
+            - type: "null"
+    CartLine:
+      type: object
+      required: [productId, size, quantity]
+      properties:
+        productId: { type: string }
+        size: { type: string, maxLength: 100 }
+        quantity: { type: integer, minimum: 1, maximum: 20 }
+    CartInput:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          maxItems: 100
+          items: { $ref: "#/components/schemas/CartLine" }
+    CartData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/CartLine" }
+    FavoritesInput:
+      type: object
+      required: [productIds]
+      properties:
+        productIds:
+          type: array
+          uniqueItems: true
+          maxItems: 100
+          items: { type: string }
+    FavoritesData:
+      type: object
+      required: [productIds]
+      properties:
+        productIds:
+          type: array
+          items: { type: string }
+    OrderInput:
+      type: object
+      required: [items, customerName, phone, area, paymentMethod]
+      properties:
+        items:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items: { $ref: "#/components/schemas/CartLine" }
+        customerName: { type: string, minLength: 2, maxLength: 100 }
+        phone: { type: string, pattern: "^[4569][0-9]{7}$" }
+        area: { type: string, minLength: 1, maxLength: 80 }
+        paymentMethod: { type: string, enum: [cod, knet, card, apple] }
+    OrderItem:
+      type: object
+      required: [productId, name, size, quantity, unitPrice]
+      properties:
+        productId: { type: string }
+        name: { $ref: "#/components/schemas/BilingualName" }
+        size: { type: string }
+        quantity: { type: integer }
+        unitPrice: { type: number }
+    BilingualName:
+      type: object
+      required: [ar, en]
+      properties:
+        ar: { type: string }
+        en: { type: string }
+    Order:
+      type: object
+      required: [id, orderNumber, items, subtotal, delivery, total, customerName, phone, area, paymentMethod, status, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        orderNumber: { type: string }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/OrderItem" }
+        subtotal: { type: number }
+        delivery: { type: number }
+        total: { type: number }
+        customerName: { type: string }
+        phone: { type: string }
+        area: { type: string }
+        paymentMethod: { type: string, enum: [cod, knet, card, apple] }
+        status: { type: string, enum: [processing] }
+        createdAt: { type: string, format: date-time }
+    ReviewInput:
+      type: object
+      required: [rating, comment]
+      properties:
+        rating: { type: integer, minimum: 1, maximum: 5 }
+        comment: { type: string, minLength: 1, maxLength: 1200 }
+    Review:
+      type: object
+      required: [id, productId, displayName, rating, comment, createdAt, updatedAt, mine]
+      properties:
+        id: { type: string, format: uuid }
+        productId: { type: string }
+        displayName: { type: string }
+        rating: { type: integer, minimum: 1, maximum: 5 }
+        comment: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        mine: { type: boolean }
+    ProductReviews:
+      type: object
+      required: [items, average, count]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/Review" }
+        average: { type: number }
+        count: { type: integer }
+    ReviewSummary:
+      type: object
+      required: [productId, average, count]
+      properties:
+        productId: { type: string }
+        average: { type: number }
+        count: { type: integer }
+    AccountData:
+      type: object
+      required: [user, orders, reviews]
+      properties:
+        user: { $ref: "#/components/schemas/User" }
+        orders:
+          type: array
+          items: { $ref: "#/components/schemas/Order" }
+        reviews:
+          type: array
+          items: { $ref: "#/components/schemas/Review" }
