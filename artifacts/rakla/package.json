@@ -73,5 +73,9 @@
     "vite": "catalog:",
     "wouter": "^3.3.5",
     "zod": "catalog:"
+  },
+  "dependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "next": "^16.4.0"
   }
 }
