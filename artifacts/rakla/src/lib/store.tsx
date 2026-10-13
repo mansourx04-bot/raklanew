@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { BUNDLE, DELIVERY_FEE, FREE_OVER, PRODUCTS, bundleFull, type Bi, type Category, type Product, type Surface } from './catalog';
+import { getGetProductsQueryKey, useGetProducts } from '@workspace/api-client-react';
+import { BUNDLE, DELIVERY_FEE, FREE_OVER, PRODUCTS as LOCAL_PRODUCTS, type Bi, type Category, type Product, type Surface } from './catalog';
 
 export type CartLine = { key: string; id: string; size: string; qty: number };
 export type ResolvedLine = CartLine & { name: Bi; price: number; image: string; isBundle: boolean };
@@ -18,17 +19,15 @@ const isLines = (v: unknown): v is CartLine[] =>
   Array.isArray(v) && v.every((l) => l && typeof l.key === 'string' && typeof l.id === 'string' && typeof l.size === 'string' && Number.isFinite(l.qty) && l.qty > 0);
 const isIds = (v: unknown): v is string[] => Array.isArray(v) && v.every((x) => typeof x === 'string');
 
-export function resolveLine(l: CartLine): ResolvedLine | null {
-  if (l.id === BUNDLE.id) return { ...l, name: { ar: 'طقم يوم المباراة', en: 'Match-Day Bundle' }, price: BUNDLE.price, image: BUNDLE.image, isBundle: true };
-  const p = PRODUCTS.find((x) => x.id === l.id);
-  return p ? { ...l, name: p.name, price: p.price, image: p.image, isBundle: false } : null;
-}
-
 export type Filters = { category: Category | 'all'; surface: Surface | 'all'; sort: 'feat' | 'low' | 'high' | 'rating'; q: string };
 export const DEFAULT_FILTERS: Filters = { category: 'all', surface: 'all', sort: 'feat', q: '' };
 
 type Ctx = {
   lines: ResolvedLine[];
+  products: Product[];
+  productsLoading: boolean;
+  productsUnavailable: boolean;
+  bundleFull: number;
   count: number;
   subtotal: number;
   delivery: number;
@@ -54,8 +53,21 @@ type Ctx = {
 const StoreCtx = createContext<Ctx | null>(null);
 
 export function StoreProvider({ children }: { children: ReactNode }) {
+  const productQuery = useGetProducts({ query: { queryKey: getGetProductsQueryKey(), retry: false, staleTime: 5 * 60 * 1000 } });
+  const missingMongoSecret = productQuery.error
+    && (productQuery.error as { status?: number; data?: { error?: string } }).status === 503
+    && (productQuery.error as { data?: { error?: string } }).data?.error === 'MONGODB_URI_MISSING';
+  const products: Product[] = useMemo(() => {
+    if (!productQuery.data) return missingMongoSecret ? LOCAL_PRODUCTS : [];
+    return productQuery.data.map((p) => ({
+      ...p,
+      oldPrice: p.oldPrice ?? undefined,
+      tag: p.tag ?? undefined,
+      image: p.image.startsWith('http') ? p.image : `${import.meta.env.BASE_URL}${p.image.replace(/^\/+/, '')}`,
+    }));
+  }, [productQuery.data, missingMongoSecret]);
   const [raw, setRaw] = useState<CartLine[]>(() => safeRead('rakla:cart', isLines, []));
-  const [favs, setFavs] = useState<string[]>(() => safeRead('rakla:favs', isIds, []).filter((id) => PRODUCTS.some((p) => p.id === id)));
+  const [favs, setFavs] = useState<string[]>(() => safeRead('rakla:favs', isIds, []));
   const [bump, setBump] = useState(0);
   const [cartOpen, setCartOpen] = useState(false);
   const [favOpen, setFavOpen] = useState(false);
@@ -70,7 +82,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => { try { localStorage.setItem('rakla:cart', JSON.stringify(raw)); } catch { /* ignore */ } }, [raw]);
   useEffect(() => { try { localStorage.setItem('rakla:favs', JSON.stringify(favs)); } catch { /* ignore */ } }, [favs]);
 
-  const lines = useMemo(() => raw.map(resolveLine).filter((x): x is ResolvedLine => !!x), [raw]);
+  const lines = useMemo(() => raw.map((l) => {
+    if (l.id === BUNDLE.id) return { ...l, name: { ar: 'طقم يوم المباراة', en: 'Match-Day Bundle' }, price: BUNDLE.price, image: BUNDLE.image, isBundle: true };
+    const p = products.find((x) => x.id === l.id);
+    return p ? { ...l, name: p.name, price: p.price, image: p.image, isBundle: false } : null;
+  }).filter((x): x is ResolvedLine => !!x), [raw, products]);
+  const currentBundleFull = BUNDLE.parts.reduce((sum, id) => sum + (products.find((p) => p.id === id)?.price ?? 0), 0);
+  useEffect(() => {
+    if (products.length) setFavs((existing) => existing.filter((id) => products.some((p) => p.id === id)));
+  }, [products]);
   const count = lines.reduce((s, l) => s + l.qty, 0);
   const subtotal = Math.round(lines.reduce((s, l) => s + l.qty * l.price, 0) * 1000) / 1000;
   const delivery = subtotal === 0 || subtotal > FREE_OVER ? 0 : DELIVERY_FEE;
@@ -90,7 +110,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const setFilters = useCallback((f: Partial<Filters>) => setF((o) => ({ ...o, ...f })), []);
 
   const value: Ctx = {
-    lines, count, subtotal, delivery, total: subtotal + delivery, add, setQty, remove, clear, favs, toggleFav, bump,
+    lines, products, productsLoading: productQuery.isLoading, productsUnavailable: productQuery.isError && !missingMongoSecret, bundleFull: currentBundleFull,
+    count, subtotal, delivery, total: subtotal + delivery, add, setQty, remove, clear, favs, toggleFav, bump,
     cartOpen, setCartOpen, favOpen, setFavOpen, searchOpen, setSearchOpen, quick, setQuick, checkoutOpen, setCheckoutOpen,
     contactOpen, setContactOpen, guideOpen, setGuideOpen, bundleOpen, setBundleOpen, filters, setFilters,
   };
@@ -102,8 +123,6 @@ export function useStore() {
   if (!c) throw new Error('useStore outside provider');
   return c;
 }
-
-export { bundleFull };
 
 export function useCountdown() {
   const [end] = useState(() => {

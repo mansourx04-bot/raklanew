@@ -18,7 +18,7 @@ A bilingual Kuwaiti football equipment storefront built as the school project "T
 - DB: MongoDB Atlas + Mongoose
 - Validation: Zod (`zod/v4`)
 - API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- Build: esbuild (ESM bundle)
 
 ## Where things live
 

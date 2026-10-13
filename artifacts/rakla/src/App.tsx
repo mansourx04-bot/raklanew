@@ -7,12 +7,15 @@ import { ErrorBoundary } from '@/components/error-boundary';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { LangProvider, useLang } from '@/lib/i18n';
 import { StoreProvider } from '@/lib/store';
+import { AuthProvider } from '@/lib/auth';
 import { Navbar } from '@/components/rakla/Navbar';
 import { Footer } from '@/components/rakla/Footer';
 import { GlobalOverlays } from '@/components/rakla/Overlays';
 import Home from '@/pages/Home';
 import Brand from '@/pages/Brand';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { LoginPage, SignupPage } from '@/pages/AuthPages';
+import Orders from '@/pages/Orders';
 
 const queryClient = new QueryClient();
 
@@ -36,6 +39,9 @@ function Router() {
       <Switch>
         <Route path="/" component={Home} />
         <Route path="/brand" component={Brand} />
+        <Route path="/login" component={LoginPage} />
+        <Route path="/signup" component={SignupPage} />
+        <Route path="/orders" component={Orders} />
         <Route component={NotFound} />
       </Switch>
     </RoutedErrorBoundary>
@@ -70,11 +76,13 @@ function App() {
       <TooltipProvider>
         <MotionConfig reducedMotion="user">
           <LangProvider>
-            <StoreProvider>
-              <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-                <Shell />
-              </WouterRouter>
-            </StoreProvider>
+            <AuthProvider>
+              <StoreProvider>
+                <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+                  <Shell />
+                </WouterRouter>
+              </StoreProvider>
+            </AuthProvider>
           </LangProvider>
         </MotionConfig>
       </TooltipProvider>

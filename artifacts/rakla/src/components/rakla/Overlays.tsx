@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import * as D from '@radix-ui/react-dialog';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
@@ -7,10 +8,13 @@ import { z } from 'zod';
 import { Apple, Banknote, Check, CheckCircle2, CreditCard, Heart, Info, Minus, PackageCheck, Plus, Ruler, Search, ShieldCheck, ShoppingBag, Trash2, Truck, X } from 'lucide-react';
 import { formatKWD, useLang } from '@/lib/i18n';
 import { useStore, useCountdown, type ResolvedLine } from '@/lib/store';
-import { AREAS, BUNDLE, FREE_OVER, PRODUCTS, bundleFull, type Product } from '@/lib/catalog';
+import { AREAS, BUNDLE, FREE_OVER, type Product } from '@/lib/catalog';
 import { Drawer, Modal } from './Overlay';
 import { FavButton, Price, Stars, useAddFlow } from './ProductCard';
 import { cn } from '@/lib/utils';
+import { getGetMyOrdersQueryKey, useCreateOrder } from '@workspace/api-client-react';
+import { useAuth } from '@/lib/auth';
+import { useLocation } from 'wouter';
 
 function QtyStepper({ value, onChange, testId }: { value: number; onChange: (n: number) => void; testId: string }) {
   const { t } = useLang();
@@ -93,12 +97,19 @@ function EmptyState({ icon: Icon, title, desc, onAction, action }: { icon: typeo
 export function CartDrawer() {
   const { t } = useLang();
   const s = useStore();
+  const { token } = useAuth();
+  const [, setLocation] = useLocation();
+  const startCheckout = () => {
+    s.setCartOpen(false);
+    if (!token) setLocation('/login?redirect=/?checkout=1');
+    else s.setCheckoutOpen(true);
+  };
   return (
     <Drawer open={s.cartOpen} onOpenChange={s.setCartOpen} title={<span className="flex items-center gap-2"><ShoppingBag className="h-5 w-5 text-volt" />{t('cart_title')} ({s.count})</span>} testId="drawer-cart"
       footer={s.lines.length ? (
         <div className="space-y-4">
           <Totals />
-          <button onClick={() => { s.setCartOpen(false); s.setCheckoutOpen(true); }} data-testid="button-checkout" className="w-full rounded-full bg-volt py-3.5 font-display font-extrabold text-ink transition hover:bg-[#d4ff4a] active:scale-[.98]">{t('checkout')}</button>
+          <button onClick={startCheckout} data-testid="button-checkout" className="w-full rounded-full bg-volt py-3.5 font-display font-extrabold text-ink transition hover:bg-[#d4ff4a] active:scale-[.98]">{t('checkout')}</button>
           <button onClick={() => s.setCartOpen(false)} className="w-full text-sm font-semibold text-pitch underline-offset-4 hover:underline" data-testid="button-continue">{t('continue')}</button>
         </div>
       ) : undefined}>
@@ -117,7 +128,7 @@ export function CartDrawer() {
 export function FavDrawer() {
   const { t, lang } = useLang();
   const s = useStore();
-  const items = PRODUCTS.filter((p) => s.favs.includes(p.id));
+  const items = s.products.filter((p) => s.favs.includes(p.id));
   return (
     <Drawer open={s.favOpen} onOpenChange={s.setFavOpen} title={<span className="flex items-center gap-2"><Heart className="h-5 w-5 fill-volt text-volt" />{t('favorites')} ({items.length})</span>} testId="drawer-favorites">
       {items.length ? (
@@ -160,7 +171,7 @@ export function SearchOverlay() {
   const { t, lang, dir } = useLang();
   const s = useStore();
   const [q, setQ] = useState('');
-  const results = useMemo(() => (q.trim() ? PRODUCTS.filter((p) => matches(p, q)) : []), [q]);
+  const results = useMemo(() => (q.trim() ? s.products.filter((p) => matches(p, q)) : []), [q, s.products]);
   const suggestions = lang === 'ar' ? ['حذاء', 'كرة', 'قفازات', 'AG', 'جوارب'] : ['Boots', 'Ball', 'Gloves', 'AG', 'Socks'];
   useEffect(() => { if (!s.searchOpen) setQ(''); }, [s.searchOpen]);
   return (
@@ -339,29 +350,37 @@ export function BundleDialog() {
   const [shin, setShin] = useState('');
   const [err, setErr] = useState(false);
   useEffect(() => { if (!s.bundleOpen) { setErr(false); } }, [s.bundleOpen]);
-  const parts = BUNDLE.parts.map((id) => PRODUCTS.find((p) => p.id === id)!);
+  const parts = BUNDLE.parts.map((id) => s.products.find((p) => p.id === id)).filter((p): p is Product => Boolean(p));
   const add = () => {
-    if (!boot || !sock || !shin) { setErr(true); return; }
+    if (!boot || !sock || !shin || parts.length !== 3) { setErr(true); return; }
     addFlow({ id: BUNDLE.id, name: { ar: 'طقم يوم المباراة', en: 'Match-Day Bundle' } }, `${boot} / ${sock} / ${shin}`);
     s.setBundleOpen(false);
   };
   return (
     <Modal open={s.bundleOpen} onOpenChange={s.setBundleOpen} title={t('bundle_name')} testId="modal-bundle">
       <div className="space-y-5 p-6 pt-3">
-        <ul className="space-y-2">
-          {parts.map((p) => (
-            <li key={p.id} className="flex items-center gap-3"><img src={p.image} alt="" className="h-12 w-12 rounded-lg object-cover" /><span className="flex-1 text-sm font-semibold">{p.name[lang]}</span><span className="font-display text-sm text-stone line-through">{formatKWD(p.price, lang)}</span></li>
-          ))}
-        </ul>
-        <SizePicker sizes={parts[0].sizes} value={boot} onChange={setBoot} label={`${t('boot_size')} (EU)`} testId="bundle-boot" />
-        <SizePicker sizes={parts[1].sizes} value={sock} onChange={setSock} label={t('sock_size')} testId="bundle-sock" />
-        <SizePicker sizes={parts[2].sizes} value={shin} onChange={setShin} label={t('shin_size')} testId="bundle-shin" />
-        {err && <p role="alert" className="text-sm font-semibold text-destructive" data-testid="text-bundle-error">{t('size_required')}</p>}
-        <div className="flex items-center justify-between rounded-xl bg-pitch p-4 text-chalk">
-          <span className="text-sm">{t('bundle_price')}<span className="ms-2 text-chalk/50 line-through">{formatKWD(bundleFull, lang)}</span></span>
-          <span className="font-display text-2xl font-black text-volt">{formatKWD(BUNDLE.price, lang)}</span>
-        </div>
-        <button onClick={add} className="w-full rounded-full bg-volt py-3.5 font-display font-extrabold text-ink hover:bg-[#d4ff4a]" data-testid="button-bundle-add">{t('add_cart')}</button>
+        {parts.length === 3 ? (
+          <>
+            <ul className="space-y-2">
+              {parts.map((p) => (
+                <li key={p.id} className="flex items-center gap-3"><img src={p.image} alt="" className="h-12 w-12 rounded-lg object-cover" /><span className="flex-1 text-sm font-semibold">{p.name[lang]}</span><span className="font-display text-sm text-stone line-through">{formatKWD(p.price, lang)}</span></li>
+              ))}
+            </ul>
+            <SizePicker sizes={parts[0].sizes} value={boot} onChange={setBoot} label={`${t('boot_size')} (EU)`} testId="bundle-boot" />
+            <SizePicker sizes={parts[1].sizes} value={sock} onChange={setSock} label={t('sock_size')} testId="bundle-sock" />
+            <SizePicker sizes={parts[2].sizes} value={shin} onChange={setShin} label={t('shin_size')} testId="bundle-shin" />
+            {err && <p role="alert" className="text-sm font-semibold text-destructive" data-testid="text-bundle-error">{t('size_required')}</p>}
+            <div className="flex items-center justify-between rounded-xl bg-pitch p-4 text-chalk">
+              <span className="text-sm">{t('bundle_price')}<span className="ms-2 text-chalk/50 line-through">{formatKWD(s.bundleFull, lang)}</span></span>
+              <span className="font-display text-2xl font-black text-volt">{formatKWD(BUNDLE.price, lang)}</span>
+            </div>
+            <button onClick={add} className="w-full rounded-full bg-volt py-3.5 font-display font-extrabold text-ink hover:bg-[#d4ff4a]" data-testid="button-bundle-add">{t('add_cart')}</button>
+          </>
+        ) : (
+          <p role={s.productsUnavailable ? 'alert' : 'status'} className="py-6 text-center text-sm text-stone" data-testid="status-bundle-products">
+            {s.productsUnavailable ? t('products_error') : t('products_loading')}
+          </p>
+        )}
         <p className="text-center text-xs text-stone">{t('bundle_demo')}</p>
       </div>
     </Modal>
@@ -389,7 +408,12 @@ type Order = { no: string; lines: ResolvedLine[]; subtotal: number; delivery: nu
 export function CheckoutDialog() {
   const { t, lang } = useLang();
   const s = useStore();
+  const { token, user } = useAuth();
+  const [, setLocation] = useLocation();
+  const queryClient = useQueryClient();
+  const createOrder = useCreateOrder();
   const [order, setOrder] = useState<Order | null>(null);
+  const [submitError, setSubmitError] = useState('');
   const schema = useMemo(() => z.object({
     name: z.string().trim().min(2, t('err_name')),
     phone: z.string().trim().regex(/^[4569]\d{7}$/, t('err_phone')),
@@ -401,12 +425,32 @@ export function CheckoutDialog() {
   const tRef = useRef(form.trigger);
   tRef.current = form.trigger;
   useEffect(() => { if (form.formState.isSubmitted) void tRef.current(); }, [lang, form.formState.isSubmitted]);
-  useEffect(() => { if (!s.checkoutOpen) { setOrder(null); form.reset(); } }, [s.checkoutOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (!s.checkoutOpen) { setOrder(null); setSubmitError(''); form.reset(); } }, [s.checkoutOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const submit = (v: F) => {
-    const no = `RK-${Date.now().toString().slice(-6)}`;
-    setOrder({ no, lines: s.lines, subtotal: s.subtotal, delivery: s.delivery, total: s.total, name: v.name, area: v.area, pay: v.pay });
-    s.clear();
+    if (!token || !user) {
+      s.setCheckoutOpen(false);
+      setLocation('/login?redirect=/?checkout=1');
+      return;
+    }
+    setSubmitError('');
+    const snapshot = [...s.lines];
+    createOrder.mutate({
+      data: {
+        customerName: v.name.trim(),
+        phone: v.phone,
+        area: v.area,
+        paymentMethod: v.pay,
+        items: snapshot.map((line) => ({ productId: line.id, size: line.size, quantity: line.qty })),
+      },
+    }, {
+      onSuccess: (saved) => {
+        setOrder({ no: saved.orderNumber, lines: snapshot, subtotal: saved.subtotal, delivery: saved.delivery, total: saved.total, name: saved.customerName, area: saved.area, pay: saved.paymentMethod });
+        s.clear();
+        void queryClient.invalidateQueries({ queryKey: getGetMyOrdersQueryKey() });
+      },
+      onError: () => setSubmitError(lang === 'ar' ? 'تعذر حفظ الطلب. تحقق من الاتصال وحاول مرة ثانية.' : 'Could not save your order. Check your connection and try again.'),
+    });
   };
   const pays = [
     { id: 'cod', icon: Banknote, label: t('pay_cod'), d: t('pay_cod_d') },
@@ -494,7 +538,8 @@ export function CheckoutDialog() {
               </div>
               {errs.pay && <p role="alert" className="mt-1 text-xs font-semibold text-destructive" data-testid="error-pay">{errs.pay.message}</p>}
             </fieldset>
-            <button type="submit" className="w-full rounded-full bg-volt py-3.5 font-display font-extrabold text-ink transition hover:bg-[#d4ff4a] active:scale-[.98]" data-testid="button-place-order">{t('co_place')} · {formatKWD(s.total, lang)}</button>
+            {submitError && <p role="alert" className="text-sm font-semibold text-destructive" data-testid="status-checkout-error">{submitError}</p>}
+            <button type="submit" disabled={createOrder.isPending} className="w-full rounded-full bg-volt py-3.5 font-display font-extrabold text-ink transition hover:bg-[#d4ff4a] active:scale-[.98] disabled:cursor-wait disabled:opacity-60" data-testid="button-place-order">{createOrder.isPending ? t('products_loading') : `${t('co_place')} · ${formatKWD(s.total, lang)}`}</button>
           </form>
         )}
       </div>

@@ -124,8 +124,41 @@ export default function Brand() {
               </li>
             ))}
           </ol>
-          <p className="mt-4 flex items-center gap-2 text-sm text-stone"><Hand className="h-4 w-4" />{L('متجر تجريبي: لا دفع حقيقي، لا طلبات حقيقية، البيانات محفوظة في المتصفح فقط.', 'Demo store: no real payments or orders; data stays in your browser only.')}</p>
+          <p className="mt-4 flex items-center gap-2 text-sm text-stone"><Hand className="h-4 w-4" />{L('الدفع تجريبي فقط؛ المنتجات والحسابات والطلبات تُحفظ في MongoDB عبر الخادم، والسلة والمفضلة في المتصفح.', 'Checkout is demo-only; products, accounts and orders are stored in MongoDB through the API, while cart and favorites stay in the browser.')}</p>
         </motion.div>
+
+        <motion.section {...fade} className={`${card} md:col-span-6`} data-testid="section-day4-database">
+          <p className={label}><span className="h-1 w-6 -skew-x-12 bg-volt" />Day 4: MongoDB &amp; Security</p>
+          <h2 className="font-display text-3xl font-black text-pitch">{L('قاعدة البيانات والأمان', 'Database & security')}</h2>
+          <p className="mt-3 text-sm leading-7 text-stone">
+            {L('قاعدة البيانات تنظّم المعلومات إلى مجموعات، وكل مجموعة تحتوي مستندات. ركلة تستخدم MongoDB Atlas مع Mongoose، والواجهة تتصل بالخادم فقط عبر API.', 'A database organizes information into collections, and each collection contains documents. RAKLA uses MongoDB Atlas with Mongoose; the storefront reaches it only through the API.')}
+          </p>
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            {[
+              [L('products — المنتجات', 'products — catalogue'), L('مستند لكل منتج في الكتالوج، ويُزرع الكتالوج الحالي إذا كانت المجموعة فارغة.', 'One document per catalogue item; the current catalogue is seeded when the collection is empty.')],
+              [L('users — المستخدمون', 'users — accounts'), L('الاسم والبريد الفريد وهاش كلمة المرور وتاريخ الإنشاء؛ لا نخزن كلمة المرور نفسها.', 'Display name, unique email, password hash and creation date; the password itself is never stored.')],
+              [L('orders — الطلبات', 'orders — purchases'), L('مستند الطلب يحفظ المستخدم والمنتجات والمقاسات والكميات والأسعار والإجمالي والمنطقة والحالة والتاريخ.', 'Each order document stores its owner, products, sizes, quantities, prices, total, area, status and date.')],
+            ].map(([title, body]) => (
+              <article key={title} className="rounded-2xl border border-ink/10 bg-chalk p-4">
+                <h3 className="font-display font-extrabold text-pitch">{title}</h3>
+                <p className="mt-2 text-sm leading-6 text-stone">{body}</p>
+              </article>
+            ))}
+          </div>
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
+            <article className="rounded-2xl bg-pitch p-5 text-chalk">
+              <h3 className="font-display text-lg font-black text-volt">{L('رحلة الرمز وكلمة المرور', 'Password and token journey')}</h3>
+              <p className="mt-2 text-sm leading-7 text-chalk/80" dir="ltr">Sign up → bcrypt hash → store hash → log in → compare hash → issue 7-day JWT → Authorization: Bearer → API validates identity → database query → response</p>
+              <p className="mt-3 text-sm leading-6 text-chalk/70">{L('كلمات المرور تُهشّ بخوارزمية bcrypt مع salt قبل التخزين. الـJWT يثبت الهوية فقط ولا يحتوي كلمة المرور.', 'Passwords are hashed with bcrypt and a salt before storage. The JWT proves identity and never contains the password.')}</p>
+            </article>
+            <article className="rounded-2xl border border-ink/10 bg-[#f1f2ec] p-5">
+              <h3 className="font-display text-lg font-black text-pitch">{L('Authentication vs Authorization', 'Authentication vs authorization')}</h3>
+              <p className="mt-2 text-sm leading-7 text-stone"><b>{L('المصادقة:', 'Authentication:')}</b> {L('الخادم يتحقق من التوكن ويعرف صاحب الحساب.', 'the server validates the token and identifies the account.')}</p>
+              <p className="mt-2 text-sm leading-7 text-stone"><b>{L('التفويض:', 'Authorization:')}</b> {L('الخادم يتأكد أن الطلب يخص المستخدم الحالي قبل إرجاعه؛ وإلا يمنع الوصول بـ403.', 'the server checks that an order belongs to the current user before returning it; otherwise access is denied with 403.')}</p>
+              <p className="mt-3 text-xs font-semibold text-stone">{L('الأسرار MONGODB_URI وJWT_SECRET تبقى في Replit Secrets وعلى الخادم فقط.', 'MONGODB_URI and JWT_SECRET stay in Replit Secrets and are read only by the server.')}</p>
+            </article>
+          </div>
+        </motion.section>
       </div>
     </div>
   );

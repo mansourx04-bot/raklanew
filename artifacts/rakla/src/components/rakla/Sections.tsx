@@ -3,7 +3,7 @@ import { AnimatePresence, motion, useScroll, useTransform } from 'framer-motion'
 import { ArrowLeft, ArrowRight, BadgePercent, Banknote, CheckCircle2, Mail, MapPin, Quote, RefreshCcw, RotateCcw, Ruler, SearchX, Timer, Truck, Users, TrendingUp, ShieldCheck } from 'lucide-react';
 import { formatKWD, useLang, type TKey } from '@/lib/i18n';
 import { useStore } from '@/lib/store';
-import { BUNDLE, CATEGORIES, PRODUCTS, SURFACES, bundleFull, img, type Surface } from '@/lib/catalog';
+import { BUNDLE, CATEGORIES, SURFACES, img, type Surface } from '@/lib/catalog';
 import { ProductCard, Stars } from './ProductCard';
 import { Countdown, matches } from './Overlays';
 import { useShopNav } from './Navbar';
@@ -102,6 +102,7 @@ export function Marquee() {
 export function CategoryTiles() {
   const { t } = useLang();
   const go = useShopNav();
+  const { products } = useStore();
   return (
     <section className="mx-auto max-w-7xl px-4 py-20 md:px-6">
       <SectionHead kicker="01" title={t('cats_title')} sub={t('cats_sub')} />
@@ -113,7 +114,7 @@ export function CategoryTiles() {
             <img src={c.image} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" />
             <div className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/20 to-transparent" />
             <div className="absolute inset-x-0 bottom-0 p-4">
-              <p className="font-display text-xs font-bold text-volt">{PRODUCTS.filter((p) => p.category === c.id).length} {t('items')}</p>
+              <p className="font-display text-xs font-bold text-volt">{products.filter((p) => p.category === c.id).length} {t('items')}</p>
               <p className="font-display text-xl font-black text-chalk md:text-2xl">{t(`cat_${c.id}`)}</p>
               <span className="mt-2 block h-1 w-8 origin-left -skew-x-12 bg-volt transition-transform duration-300 group-hover:scale-x-[2.5] rtl:origin-right" />
             </div>
@@ -136,14 +137,14 @@ function SurfaceGlyph({ s }: { s: Surface }) {
 
 export function SurfaceAndShop() {
   const { t, lang } = useLang();
-  const { filters, setFilters } = useStore();
+  const { filters, setFilters, products, productsLoading, productsUnavailable } = useStore();
   const list = useMemo(() => {
-    let l = PRODUCTS.filter((p) => (filters.category === 'all' || p.category === filters.category) && (filters.surface === 'all' || p.surfaces.includes(filters.surface)) && matches(p, filters.q));
+    let l = products.filter((p) => (filters.category === 'all' || p.category === filters.category) && (filters.surface === 'all' || p.surfaces.includes(filters.surface)) && matches(p, filters.q));
     if (filters.sort === 'low') l = [...l].sort((a, b) => a.price - b.price);
     if (filters.sort === 'high') l = [...l].sort((a, b) => b.price - a.price);
     if (filters.sort === 'rating') l = [...l].sort((a, b) => b.rating - a.rating);
     return l;
-  }, [filters]);
+  }, [filters, products]);
   const dirty = filters.category !== 'all' || filters.surface !== 'all' || filters.q !== '' || filters.sort !== 'feat';
   const reset = () => setFilters({ category: 'all', surface: 'all', q: '', sort: 'feat' });
   const cats = ['all', ...CATEGORIES.map((c) => c.id)] as const;
@@ -202,6 +203,12 @@ export function SurfaceAndShop() {
             {list.map((p, i) => <ProductCard key={p.id} p={p} index={i} />)}
           </AnimatePresence>
         </motion.div>
+        {productsLoading && (
+          <p className="py-10 text-center font-semibold text-stone" role="status" data-testid="status-products-loading">{t('products_loading')}</p>
+        )}
+        {productsUnavailable && (
+          <p className="mt-6 rounded-2xl border border-ink/10 bg-ink/5 px-5 py-4 text-center text-sm font-semibold text-stone" role="alert" data-testid="status-products-error">{t('products_error')}</p>
+        )}
         {list.length === 0 && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center rounded-3xl border-2 border-dashed border-pitch/20 px-6 py-16 text-center" data-testid="state-empty-grid">
             <SearchX className="h-12 w-12 text-pitch" />
@@ -219,8 +226,8 @@ export function SurfaceAndShop() {
 export function BundleSection() {
   const { t, lang } = useLang();
   const s = useStore();
-  const parts = BUNDLE.parts.map((id) => PRODUCTS.find((p) => p.id === id)!);
-  const pct = Math.round((1 - BUNDLE.price / bundleFull) * 100);
+  const parts = BUNDLE.parts.map((id) => s.products.find((p) => p.id === id)).filter((p): p is NonNullable<typeof p> => Boolean(p));
+  const pct = s.bundleFull ? Math.round((1 - BUNDLE.price / s.bundleFull) * 100) : 0;
   return (
     <section id="bundle" className="scroll-mt-16 px-4 py-10 md:px-6">
       <div className="relative mx-auto max-w-7xl overflow-hidden rounded-[32px] bg-pitch text-chalk">
@@ -238,7 +245,7 @@ export function BundleSection() {
             </div>
             <div className="mt-6 flex flex-wrap items-end gap-4">
               <div>
-                <p className="text-xs text-chalk/60">{t('separately')}: <span className="line-through">{formatKWD(bundleFull, lang)}</span></p>
+                <p className="text-xs text-chalk/60">{t('separately')}: <span className="line-through">{formatKWD(s.bundleFull, lang)}</span></p>
                 <p className="font-display text-4xl font-black text-volt" data-testid="text-bundle-price">{formatKWD(BUNDLE.price, lang)}</p>
               </div>
               <button onClick={() => s.setBundleOpen(true)} className="group flex items-center gap-2 rounded-full bg-volt px-6 py-4 font-display font-extrabold text-ink transition hover:bg-[#d4ff4a] active:scale-95" data-testid="button-bundle-open">

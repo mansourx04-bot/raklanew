@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { motion } from 'framer-motion';
-import { Heart, Languages, Menu, Search, ShoppingBag } from 'lucide-react';
+import { Heart, Languages, LogOut, Menu, Search, ShoppingBag, UserRound } from 'lucide-react';
 import { useLang, type TKey } from '@/lib/i18n';
 import { useStore } from '@/lib/store';
 import type { Category } from '@/lib/catalog';
 import { BrandLogo, BrandIcon } from './Logo';
 import { Drawer } from './Overlay';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/lib/auth';
 
 type Target = 'top' | 'offers' | Category | 'shop' | 'surfaces';
 export const NAV: { key: TKey; target: Target }[] = [
@@ -46,6 +47,7 @@ function CountBadge({ n, testId }: { n: number; testId: string }) {
 export function Navbar() {
   const { t, toggle } = useLang();
   const s = useStore();
+  const auth = useAuth();
   const go = useShopNav();
   const [scrolled, setScrolled] = useState(false);
   const [menu, setMenu] = useState(false);
@@ -55,14 +57,15 @@ export function Navbar() {
     return () => window.removeEventListener('scroll', f);
   }, []);
 
-  const iconBtn = 'relative grid h-10 w-10 place-items-center rounded-full text-chalk transition hover:bg-chalk/10 focus-visible:outline-2 focus-visible:outline-volt';
+  const iconBtn = 'relative grid h-9 w-9 place-items-center rounded-full text-chalk transition hover:bg-chalk/10 focus-visible:outline-2 focus-visible:outline-volt sm:h-10 sm:w-10';
 
   return (
     <header className={cn('sticky top-0 z-40 transition-colors duration-300', scrolled ? 'bg-ink/92 backdrop-blur-md shadow-[0_8px_30px_-12px_rgba(0,0,0,.5)]' : 'bg-pitch')}>
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-1.5 px-4 sm:gap-3 md:h-[72px] md:px-6">
         <button className={cn(iconBtn, 'lg:hidden')} onClick={() => setMenu(true)} aria-label={t('menu')} data-testid="button-menu"><Menu className="h-5 w-5" /></button>
         <Link href="/" className="flex shrink-0 items-center" aria-label="RAKLA ركلة" data-testid="link-logo">
-          <BrandIcon className="h-[34px] w-[34px] sm:hidden" />
+          <BrandIcon className="h-7 w-7 sm:hidden" />
+          <BrandLogo variant="light" className="ms-1 h-6 sm:hidden" />
           <BrandLogo variant="light" className="hidden h-10 sm:block" />
         </Link>
         <nav className="ms-6 hidden items-center gap-1 lg:flex" aria-label="primary">
@@ -83,6 +86,10 @@ export function Navbar() {
             className={iconBtn} onClick={() => s.setCartOpen(true)} aria-label={t('cart')} data-testid="button-cart">
             <ShoppingBag className="h-5 w-5" /><CountBadge n={s.count} testId="text-cart-count" />
           </motion.button>
+          <Link href={auth.user ? '/orders' : '/login'} className={cn(iconBtn, 'xl:inline-flex xl:h-10 xl:w-auto xl:gap-2 xl:px-2')} aria-label={auth.user ? t('nav_account') : t('nav_login')} title={auth.user ? t('nav_account') : t('nav_login')} data-testid="link-account">
+            <UserRound className="h-5 w-5 shrink-0" /><span className="hidden whitespace-nowrap xl:inline">{auth.user ? t('nav_account') : t('nav_login')}</span>
+          </Link>
+          {auth.user && <button onClick={auth.logout} className={cn(iconBtn, 'hidden lg:grid')} aria-label={t('nav_logout')} title={t('nav_logout')} data-testid="button-logout"><LogOut className="h-4 w-4" /></button>}
           <button onClick={toggle} data-testid="button-lang"
             className="ms-1 hidden items-center gap-1.5 rounded-full border border-chalk/25 px-3 py-1.5 font-display text-xs font-bold text-chalk transition hover:border-volt hover:text-volt sm:flex">
             <Languages className="h-4 w-4" />{t('lang_switch')}
@@ -102,6 +109,11 @@ export function Navbar() {
             </motion.button>
           ))}
           <Link href="/brand" onClick={() => setMenu(false)} data-testid="link-mobile-brand" className="px-3 py-4 font-display text-lg font-bold text-pitch underline-offset-4 hover:underline">{t('nav_brand')}</Link>
+          <Link href={auth.user ? '/orders' : '/login'} onClick={() => setMenu(false)} data-testid="link-mobile-account" className="flex items-center gap-2 px-3 py-4 font-display text-lg font-bold text-pitch">
+            <UserRound className="h-5 w-5" />{auth.user ? t('nav_orders') : t('nav_login')}
+          </Link>
+          {!auth.user && <Link href="/signup" onClick={() => setMenu(false)} data-testid="link-mobile-signup" className="px-3 py-3 text-sm font-semibold text-pitch">{t('nav_signup')}</Link>}
+          {auth.user && <button onClick={() => { auth.logout(); setMenu(false); }} data-testid="button-mobile-logout" className="flex items-center gap-2 px-3 py-4 text-start font-display text-lg font-bold text-pitch"><LogOut className="h-5 w-5" />{t('nav_logout')}</button>}
           <button onClick={toggle} data-testid="button-lang-menu" className="mx-3 mt-4 flex items-center justify-center gap-2 rounded-full bg-pitch py-3 font-display font-bold text-chalk">
             <Languages className="h-4 w-4" />{t('lang_switch')}
           </button>

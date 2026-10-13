@@ -11,3 +11,5 @@
 - Send JWTs using `Authorization: Bearer <token>` on protected API requests. Clear the stored token on logout.
 - Every protected route checks authentication. Every record-specific route also checks authorization/ownership on the server.
 - Preserve the RAKLA identity and the Arabic-default RTL / English LTR language toggle on every screen.
+- Never trigger a page reload or native full-page redirect for app interactions. Sign up, log in, log out, cart updates, checkout, My Orders, and language changes must update through React state and Wouter navigation; do not use `window.location.reload()`, `location.href`/`assign`/`replace`, native internal form actions, or polling refreshes.
+- Do not poll the API to refresh these flows. A local countdown may update its own display, but must not reload the page or repeatedly refetch data.
