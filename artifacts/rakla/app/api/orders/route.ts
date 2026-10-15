@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { apiError } from '../../../lib/api-error';
 import { dbConnect } from '../../../lib/db';
 import { readSessionUserId } from '../../../lib/session';
+import { getStripe, toStripeKwd } from '../../../lib/stripe';
 import { Order } from '../../../models/Order';
 import { Product } from '../../../models/Product';
 
@@ -136,6 +137,45 @@ export async function POST(request: NextRequest) {
       paymentMethod: parsed.data.paymentMethod,
       status: 'pending',
     });
+
+    // Card and Apple Pay go through Stripe Checkout; the webhook marks the order paid.
+    if (parsed.data.paymentMethod === 'card' || parsed.data.paymentMethod === 'apple') {
+      try {
+        const origin = request.nextUrl.origin;
+        const lineItems = orderItems.map((item) => ({
+          quantity: item.quantity,
+          price_data: {
+            currency: 'kwd',
+            unit_amount: toStripeKwd(item.price),
+            product_data: {
+              name: (item.name as { en?: string } | undefined)?.en ?? item.productId,
+              ...(item.size ? { description: `Size: ${item.size}` } : {}),
+            },
+          },
+        }));
+        if (delivery > 0) {
+          lineItems.push({
+            quantity: 1,
+            price_data: { currency: 'kwd', unit_amount: toStripeKwd(delivery), product_data: { name: 'Delivery' } },
+          });
+        }
+        const orderId = String(saved._id);
+        const session = await getStripe().checkout.sessions.create({
+          mode: 'payment',
+          line_items: lineItems,
+          client_reference_id: orderId,
+          metadata: { orderId, orderNumber: saved.orderNumber },
+          success_url: `${origin}/orders?paid=${encodeURIComponent(saved.orderNumber)}`,
+          cancel_url: `${origin}/cart`,
+        });
+        await Order.updateOne({ _id: saved._id }, { $set: { stripeSessionId: session.id } });
+        return NextResponse.json({ ...publicOrder(saved.toObject()), checkoutUrl: session.url }, { status: 201 });
+      } catch (error) {
+        await Order.deleteOne({ _id: saved._id });
+        throw error;
+      }
+    }
+
     return NextResponse.json(publicOrder(saved.toObject()), { status: 201 });
   } catch (error) {
     return apiError(error, 'Could not save the order.');

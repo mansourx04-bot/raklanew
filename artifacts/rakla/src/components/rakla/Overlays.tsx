@@ -445,6 +445,12 @@ export function CheckoutDialog() {
       },
     }, {
       onSuccess: (saved) => {
+        const checkoutUrl = (saved as typeof saved & { checkoutUrl?: string | null }).checkoutUrl;
+        if (checkoutUrl) {
+          s.clear();
+          window.location.assign(checkoutUrl);
+          return;
+        }
         setOrder({ no: saved.orderNumber, lines: snapshot, subtotal: saved.subtotal, delivery: saved.delivery, total: saved.total, name: saved.customerName, area: saved.area, pay: saved.paymentMethod });
         s.clear();
         void queryClient.invalidateQueries({ queryKey: getGetMyOrdersQueryKey() });
